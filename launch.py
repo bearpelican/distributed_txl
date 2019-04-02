@@ -67,7 +67,8 @@ def main():
     #   '--save', f'/ncluster/models/{args.name}.pth'
       ]
 
-  params = ['--phases', schedules[args.machines]]
+#   params = ['--phases', schedules[args.machines]]
+  params = []
   training_params = default_params + params
   training_params = ' '.join(map(format_params, training_params))
   train_script = 'training/train.py'
