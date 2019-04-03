@@ -8,12 +8,12 @@ IMAGE_NAME = 'pytorch.imagenet.source.v13.u18'
 INSTANCE_TYPE = 'p3.2xlarge'
 NUM_GPUS = {'p3.2xlarge': 1, 'p3.8xlarge':4, 'p3.16xlarge':8}[INSTANCE_TYPE]
 
-ncluster.set_backend('aws')
 parser = argparse.ArgumentParser()
 parser.add_argument('--name', type=str, default='txl',
                     help="name of the current run, used for machine naming and tensorboard visualization")
 parser.add_argument('--machines', type=int, default=1,
                     help="how many machines to use")
+parser.add_argument("--aws", action="store_true", help="enable to run on AWS")
 args = parser.parse_args()
 
 lr = 1.0
@@ -26,12 +26,16 @@ one_machine = [
 
 schedules = {1: one_machine}
 
+if args.aws:
+  ncluster.set_backend('aws')
+
 
 # routines to build NCCL ring orders
 def get_nccl_params(num_tasks, num_gpus):
   if num_tasks <= 1:
     return 'NCCL_DEBUG=VERSION'
   # return 'NCCL_MIN_NRINGS=2 NCCL_SINGLE_RING_THRESHOLD=10 NCCL_DEBUG=VERSION'
+
 
 def format_params(arg):
   if isinstance(arg, list) or isinstance(arg, dict):
@@ -41,7 +45,7 @@ def format_params(arg):
 
 
 def main():
-  supported_regions = ['us-west-2', 'us-east-1', 'us-east-2']
+  supported_regions = ['us-west-2', 'us-east-1', 'us-east-2', 'local']
   assert ncluster.get_region() in supported_regions, f"required AMI {IMAGE_NAME} has only been made available in regions {supported_regions}, but your current region is {ncluster.get_region()}"
   assert args.machines in schedules, f"{args.machines} not supported, only support {schedules.keys()}"
 
@@ -56,8 +60,14 @@ def main():
                         #   skip_efs=False,
                         #   spot=True
                           )
+
   job.upload('training')
-  job.run(f'conda activate fastai')
+  if ncluster.get_region() == 'local':
+    job.run('conda activate main')
+
+  # specific to image
+  else:
+    job.run(f'conda activate fastai')
 
   nccl_params = get_nccl_params(args.machines, NUM_GPUS)
 
