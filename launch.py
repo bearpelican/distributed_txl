@@ -1,5 +1,14 @@
 #!/usr/bin/env python
 
+# Running on AWS
+# python launch.py --aws
+
+# Running locally
+# mkdir -p  ~/data/wikitext-2-raw
+# aws s3 cp s3://yaroslavvb2/data/wikitext-2-raw/data_save.pkl ~/data/wikitext-2-raw
+# (https://s3-us-east-1.amazonaws.com/yaroslavvb2/data/wikitext-2-raw/data_save.pkl)
+# python launch.py
+
 import argparse
 import ncluster
 import os
