@@ -45,7 +45,7 @@ def main():
   assert ncluster.get_region() in supported_regions, f"required AMI {IMAGE_NAME} has only been made available in regions {supported_regions}, but your current region is {ncluster.get_region()}"
   assert args.machines in schedules, f"{args.machines} not supported, only support {schedules.keys()}"
 
-  os.environ['NCLUSTER_AWS_FAST_ROOTDISK'] = '1'  # use io2 disk on AWS
+  #  os.environ['NCLUSTER_AWS_FAST_ROOTDISK'] = '1'  # use io2 disk on AWS
   job = ncluster.make_job(name=args.name,
                           run_name=f"{args.name}-{args.machines}",
                           num_tasks=args.machines,
