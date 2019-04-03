@@ -4,7 +4,7 @@ import argparse
 import ncluster
 import os
 
-IMAGE_NAME = 'pytorch.imagenet.source.v12.u18'
+IMAGE_NAME = 'pytorch.imagenet.source.v13.u18'
 INSTANCE_TYPE = 'p3.2xlarge'
 NUM_GPUS = {'p3.2xlarge': 1, 'p3.8xlarge':4, 'p3.16xlarge':8}[INSTANCE_TYPE]
 
