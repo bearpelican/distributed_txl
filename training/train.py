@@ -1,10 +1,14 @@
+# workaround for fastai crash on Mac: https://github.com/scikit-optimize/scikit-optimize/issues/637
+import matplotlib
+matplotlib.use('PS')
+
 from fastai.text import *
 from fastai.callbacks.tracker import *
 from fastai.distributed import *
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', type=str, default='data/wikitext-2-raw/')
+parser.add_argument('--path', type=str, default='~/data/wikitext-2-raw/')
 parser.add_argument('--save', type=str, default='first_run')
 parser.add_argument('--load', type=str, default=None)
 parser.add_argument("--local_rank", type=int)
@@ -17,12 +21,23 @@ parser.add_argument('--epochs', type=int, default=5, help='num epochs')
 parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
 args = parser.parse_args()
 
+args.path = args.path.replace('~', os.environ['HOME'])
+
 if args.local_rank != 0:
     f = open('/dev/null', 'w')
     sys.stdout = f
-    
-torch.cuda.set_device(args.local_rank)
-torch.distributed.init_process_group(backend='nccl', init_method='env://')
+
+if torch.cuda.device_count()>0:
+  torch.cuda.set_device(args.local_rank)
+else:
+  print("Not using GPU")
+
+running_on_mac = False  # distributed is missing on Mac, keep track
+try:
+  torch.distributed.init_process_group(backend='nccl', init_method='env://')
+except:
+  print("Couldn't init process group...running on mac?")
+  running_on_mac = True
 
 bs=args.batch_size
 bptt=args.bptt
@@ -47,7 +62,10 @@ if args.save:
     save_path = Path(args.path)/learn.model_dir/args.save
     save_path.parent.mkdir(parents=True, exist_ok=True)
 if args.half: learn = learn.to_fp16(clip=0.25, dynamic=True)
-learn = learn.to_distributed(args.local_rank)
+
+if not running_on_mac:
+  learn = learn.to_distributed(args.local_rank)
+  
 if args.local_rank == 0: learn.callbacks.append(SaveModelCallback(learn, name=f'{args.save}_best'))
 learn.callbacks.append(EarlyStoppingCallback(learn))
 
