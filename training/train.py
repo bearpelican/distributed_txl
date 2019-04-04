@@ -8,7 +8,7 @@ from fastai.distributed import *
 
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--path', type=str, default='~/data/wikitext-2-raw/')
+parser.add_argument('--path', type=str, default='~/data/wikitext-3-raw/')
 parser.add_argument('--save', type=str, default='first_run')
 parser.add_argument('--load', type=str, default=None)
 parser.add_argument("--local_rank", type=int)
@@ -22,6 +22,17 @@ parser.add_argument('--lr', type=float, default=1e-3, help='learning rate')
 args = parser.parse_args()
 
 args.path = args.path.replace('~', os.environ['HOME'])
+
+# download wikitext-3 if needed
+if 'wikitext-3' in args.path:
+  print("creating")
+  HOME = os.environ['HOME']
+  if not os.path.exists(f'{HOME}/data/wikitext-3-raw/data_save.pkl'):
+    print("Downloading")
+    os.system(f'mkdir -p {HOME}/data/wikitext-3-raw')
+    os.system(f'wget --no-check-certificate https://s3-us-west-2.amazonaws.com/ashaw-fastai-imagenet/nlp/wikitext-103-raw/data_save.pkl -O {HOME}/data/wikitext-3-raw/data_save.pkl')
+
+
 
 if args.local_rank != 0:
     f = open('/dev/null', 'w')

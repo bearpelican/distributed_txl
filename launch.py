@@ -2,8 +2,20 @@
 
 # Running on AWS
 # python launch.py --aws
+#
+# Wikitext-3 training. 3 hours per epoch.
+#
+# /ncluster/runs/fastai.wikitext-3-raw
+# Better model found at epoch 1 with val_loss value: 3.7706105709075928.
+# 2         3.793330    3.583894    0.378477  2:53:53
+# Better model found at epoch 2 with val_loss value: 3.5838944911956787.
+# 3         3.667973    3.432626    0.395862  2:54:01
+# Better model found at epoch 3 with val_loss value: 3.4326255321502686.
+# 4         3.608931    3.378200    0.402312  2:54:03
+# Better model found at epoch 4 with val_loss value: 3.3782002925872803.
+# Total time: 14:32:22
 
-# Running locally
+# Running locally with wikitext-2
 # mkdir -p  ~/data/wikitext-2-raw
 # aws s3 cp s3://yaroslavvb2/data/wikitext-2-raw/data_save.pkl ~/data/wikitext-2-raw
 # (https://s3-us-east-1.amazonaws.com/yaroslavvb2/data/wikitext-2-raw/data_save.pkl)
@@ -26,8 +38,8 @@ parser.add_argument("--aws", action="store_true", help="enable to run on AWS")
 args = parser.parse_args()
 
 lr = 1.0
-bs = [512, 224, 128] # largest batch size that fits in memory for each image size
-bs_scale = [x/bs[0] for x in bs]
+#bs = [512, 224, 128] # largest batch size that fits in memory for each image size
+#bs_scale = [x/bs[0] for x in bs]
 one_machine = [
   {'ep':(0,1),  'lr':(lr,lr*2)}, # lr warmup is better with --init-bn0
   {'ep':(1,2), 'lr':(lr*2,lr/4)}, # trying one cycle
@@ -58,16 +70,11 @@ def main():
   assert ncluster.get_region() in supported_regions, f"required AMI {IMAGE_NAME} has only been made available in regions {supported_regions}, but your current region is {ncluster.get_region()}"
   assert args.machines in schedules, f"{args.machines} not supported, only support {schedules.keys()}"
 
-  #  os.environ['NCLUSTER_AWS_FAST_ROOTDISK'] = '1'  # use io2 disk on AWS
   job = ncluster.make_job(name=args.name,
                           run_name=f"{args.name}-{args.machines}",
                           num_tasks=args.machines,
                           image_name=IMAGE_NAME,
                           instance_type=INSTANCE_TYPE,
-                        #   disk_size=1000,
-                        #   install_script=open('setup.sh').read(),
-                        #   skip_efs=False,
-                        #   spot=True
                           )
 
   job.upload('training')
@@ -91,6 +98,7 @@ def main():
   training_params = default_params + params
   training_params = ' '.join(map(format_params, training_params))
   train_script = 'training/train.py'
+
 
   # TODO: simplify args processing, or give link to actual commands run
   for i, task in enumerate(job.tasks):
